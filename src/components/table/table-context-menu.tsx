@@ -53,6 +53,7 @@ function TableContextMenu({
         left: position.x,
         top: position.y,
         zIndex: 1000,
+        minWidth: 220,
         backgroundColor: token.colorBgElevated,
         border: `1px solid ${token.colorBorderSecondary}`,
         borderRadius: token.borderRadiusLG,
@@ -83,6 +84,7 @@ function TableContextMenu({
           <Button
             size='small'
             type='text'
+            block
             icon={<InsertRowLeftOutlined />}
             onClick={() => {
               editor.chain().focus().addColumnBefore().run();
@@ -95,6 +97,7 @@ function TableContextMenu({
           <Button
             size='small'
             type='text'
+            block
             icon={<InsertRowRightOutlined />}
             onClick={() => {
               editor.chain().focus().addColumnAfter().run();
@@ -107,6 +110,7 @@ function TableContextMenu({
           <Button
             size='small'
             type='text'
+            block
             danger
             icon={<DeleteColumnOutlined />}
             onClick={() => {
@@ -139,6 +143,7 @@ function TableContextMenu({
           <Button
             size='small'
             type='text'
+            block
             icon={<InsertRowAboveOutlined />}
             onClick={() => {
               editor.chain().focus().addRowBefore().run();
@@ -151,6 +156,7 @@ function TableContextMenu({
           <Button
             size='small'
             type='text'
+            block
             icon={<InsertRowBelowOutlined />}
             onClick={() => {
               editor.chain().focus().addRowAfter().run();
@@ -163,6 +169,7 @@ function TableContextMenu({
           <Button
             size='small'
             type='text'
+            block
             danger
             icon={<DeleteRowOutlined />}
             onClick={() => {
@@ -181,6 +188,7 @@ function TableContextMenu({
         <Button
           size='small'
           type='text'
+          block
           danger
           icon={<TableOutlined />}
           onClick={() => {

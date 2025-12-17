@@ -1,4 +1,13 @@
+import {
+  AlignCenterOutlined,
+  AlignLeftOutlined,
+  AlignRightOutlined,
+  ColumnWidthOutlined,
+  DeleteOutlined,
+  ReloadOutlined,
+} from "@ant-design/icons";
 import type { Editor } from "@tiptap/react";
+import { Button, Divider, Space, theme } from "antd";
 import { useEffect, useRef } from "react";
 
 export interface ImageContextMenuProps {
@@ -12,6 +21,7 @@ function ImageContextMenu({
   position,
   onClose,
 }: ImageContextMenuProps) {
+  const { token } = theme.useToken();
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -34,192 +44,389 @@ function ImageContextMenu({
     return null;
   }
 
+  const alignImage = (align: "left" | "center" | "right") => {
+    const { from } = editor.state.selection;
+    const node = editor.state.doc.nodeAt(from);
+
+    if (!node || node.type.name !== "image") {
+      return;
+    }
+
+    const currentAttrs = node.attrs as {
+      src: string;
+      width?: number | string;
+      height?: number | string;
+      style?: string;
+    };
+
+    let style = currentAttrs.style || "";
+
+    // Remove previous alignment-related styles
+    style = style
+      .replace(/margin-left:\s*[^;]+;?/g, "")
+      .replace(/margin-right:\s*[^;]+;?/g, "")
+      .replace(/text-align:\s*[^;]+;?/g, "")
+      .replace(/display:\s*[^;]+;?/g, "")
+      .trim();
+
+    let alignStyle = "";
+    if (align === "left") {
+      alignStyle = "display: block; margin-left: 0; margin-right: auto;";
+    } else if (align === "center") {
+      alignStyle = "display: block; margin-left: auto; margin-right: auto;";
+    } else {
+      // right
+      alignStyle = "display: block; margin-left: auto; margin-right: 0;";
+    }
+
+    style = (style ? style + " " : "") + alignStyle;
+
+    const tr = editor.state.tr;
+    tr.setNodeMarkup(from, null, {
+      ...currentAttrs,
+      style: style.trim(),
+    });
+    editor.view.dispatch(tr);
+    onClose();
+  };
+
   const resizeImage = (width: number | string, height?: number | string) => {
-    // First, try to find the image using DOM (most reliable)
     const view = editor.view;
 
-    // Try to find image from the DOM at selection position
+    // Try to find image node and DOM element using the context menu position
     let imagePos: number | null = null;
     let imageNode: {
       type: { name: string };
       attrs: Record<string, unknown>;
     } | null = null;
+    let imgElement: HTMLImageElement | null = null;
 
-    imagePos = view.posAtDOM(position?.image, 0);
-    if (imagePos !== null) {
-      const node = editor.state.doc.nodeAt(imagePos);
-      if (node && node.type.name === "image") {
-        imageNode = node;
+    if (position?.image) {
+      imgElement = position.image;
+      const posFromDom = view.posAtDOM(position.image, 0);
+      if (posFromDom !== null) {
+        imagePos = posFromDom;
+        const node = editor.state.doc.nodeAt(imagePos);
+        if (node && node.type.name === "image") {
+          imageNode = node as {
+            type: { name: string };
+            attrs: Record<string, unknown>;
+          };
+        }
       }
     }
 
-    // If not found via DOM, search the document
-    if (!imageNode) {
+    // Fallback: search the document for the image node
+    if (!imageNode || imagePos === null) {
       editor.state.doc.descendants((node, pos) => {
         if (node.type.name === "image") {
-          const nodeDom = view.nodeDOM(pos);
-          if (nodeDom) {
+          const dom = view.nodeDOM(pos);
+          if (dom && dom === position?.image) {
             imageNode = node as {
               type: { name: string };
               attrs: Record<string, unknown>;
             };
             imagePos = pos;
+            imgElement = dom as HTMLImageElement;
             return false;
           }
         }
       });
     }
 
-    if (imageNode && imagePos !== null) {
-      const src = imageNode.attrs.src as string;
-      const currentAttrs = imageNode.attrs;
-      const currentHTMLAttrs = (currentAttrs.HTMLAttributes as Record<string, string>) || {};
+    if (!imageNode || imagePos === null) {
+      return;
+    }
 
-      // Build style string
-      let styleString = currentHTMLAttrs.style || "";
+    const currentAttrs = imageNode.attrs as {
+      src: string;
+      width?: number | string;
+      height?: number | string;
+      style?: string;
+    };
 
-      // Handle width - update style string
-      if (typeof width === "string" && width.includes("%")) {
-        // Remove existing width from style
-        styleString = styleString.replace(/width:\s*[^;]+;?/g, "").trim();
-        styleString = (styleString ? styleString + " " : "") + `width: ${width};`;
-      } else if (typeof width === "number") {
-        // Remove width from style when using numeric width
-        styleString = styleString.replace(/width:\s*[^;]+;?/g, "").trim();
+    // If width is a percentage string, apply it as CSS relative to parent
+    if (typeof width === "string" && width.trim().endsWith("%")) {
+      const trimmed = width.trim();
+      let style = currentAttrs.style || "";
+
+      // Remove existing width style
+      style = style.replace(/width:\s*[^;]+;?/g, "").trim();
+      // Append new width
+      style = (style ? style + " " : "") + `width: ${trimmed};`;
+
+      const transaction = editor.state.tr;
+      transaction.setNodeMarkup(imagePos, null, {
+        ...currentAttrs,
+        // clear numeric width/height when using percentage so CSS controls size
+        width: null,
+        height: height ?? null,
+        style: style.trim(),
+      });
+      editor.view.dispatch(transaction);
+      onClose();
+      return;
+    }
+
+    // Otherwise, treat as absolute pixel size (px)
+    let targetWidth: number | null = null;
+
+    if (typeof width === "number") {
+      targetWidth = Math.max(10, width);
+    } else if (typeof width === "string") {
+      const trimmed = width.trim();
+      if (trimmed.endsWith("px")) {
+        const val = parseInt(trimmed.slice(0, -2), 10);
+        if (!Number.isNaN(val)) {
+          targetWidth = Math.max(10, val);
+        }
       } else {
-        // String width (e.g., "300px")
-        styleString = styleString.replace(/width:\s*[^;]+;?/g, "").trim();
-        styleString = (styleString ? styleString + " " : "") + `width: ${width};`;
+        const val = parseInt(trimmed, 10);
+        if (Number.isNaN(val)) {
+          return;
+        }
+        targetWidth = Math.max(10, val);
       }
+    }
 
-      // Handle height
-      if (height) {
-        if (typeof height === "string" && height.includes("%")) {
-          styleString = styleString.replace(/height:\s*[^;]+;?/g, "").trim();
-          styleString = (styleString ? styleString + " " : "") + `height: ${height};`;
-        } else if (typeof height === "number") {
-          styleString = styleString.replace(/height:\s*[^;]+;?/g, "").trim();
+    if (!targetWidth) {
+      return;
+    }
+
+    // Optionally compute height to keep aspect ratio if height is not provided
+    let targetHeight: number | undefined;
+    if (height !== undefined) {
+      if (typeof height === "number") {
+        targetHeight = height;
+      } else {
+        const trimmed = height.trim();
+        if (trimmed.endsWith("px")) {
+          const val = parseInt(trimmed.slice(0, -2), 10);
+          if (!Number.isNaN(val)) {
+            targetHeight = Math.max(10, val);
+          }
         } else {
-          styleString = styleString.replace(/height:\s*[^;]+;?/g, "").trim();
-          styleString = (styleString ? styleString + " " : "") + `height: ${height};`;
+          const val = parseInt(trimmed, 10);
+          if (!Number.isNaN(val)) {
+            targetHeight = Math.max(10, val);
+          }
         }
       }
-
-      // Build new attributes
-      const newAttrs: {
-        src: string;
-        width?: number;
-        height?: number;
-        HTMLAttributes?: Record<string, string>;
-      } = {
-        src: src,
-      };
-
-      // Add width/height if numeric
-      if (typeof width === "number") {
-        newAttrs.width = width;
+    } else if (
+      imgElement &&
+      imgElement.naturalWidth &&
+      imgElement.naturalHeight
+    ) {
+      const aspectRatio = imgElement.naturalWidth / imgElement.naturalHeight;
+      if (Number.isFinite(aspectRatio) && aspectRatio > 0) {
+        targetHeight = Math.max(10, Math.round(targetWidth / aspectRatio));
       }
-      if (height && typeof height === "number") {
-        newAttrs.height = height;
-      }
-
-      // Add HTMLAttributes with style
-      if (styleString.trim()) {
-        newAttrs.HTMLAttributes = {
-          ...currentHTMLAttrs,
-          style: styleString.trim(),
-        };
-      } else if (Object.keys(currentHTMLAttrs).length > 0) {
-        // Preserve other HTMLAttributes even if no style
-        newAttrs.HTMLAttributes = currentHTMLAttrs;
-      }
-
-      // Use transaction to update the image node
-      const tr = editor.state.tr;
-      tr.setNodeMarkup(imagePos, null, {
-        ...currentAttrs,
-        ...newAttrs,
-      });
-      editor.view.dispatch(tr);
-
-      onClose();
     }
+
+    const transaction = editor.state.tr;
+    transaction.setNodeMarkup(imagePos, null, {
+      ...currentAttrs,
+      width: targetWidth,
+      ...(targetHeight ? { height: targetHeight } : {}),
+    });
+    editor.view.dispatch(transaction);
+
+    onClose();
   };
 
   return (
     <div
       ref={menuRef}
-      className='fixed bg-white border border-gray-300 rounded shadow-lg z-50 py-1 min-w-[200px]'
       style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`,
+        position: "fixed",
+        left: position.x,
+        top: position.y,
+        zIndex: 1000,
+        minWidth: 220,
+        backgroundColor: token.colorBgElevated,
+        border: `1px solid ${token.colorBorderSecondary}`,
+        borderRadius: token.borderRadiusLG,
+        boxShadow: token.boxShadowSecondary,
+        padding: token.paddingXS,
       }}
     >
-      <div className='text-xs font-semibold text-gray-700 px-3 py-1 border-b border-gray-200'>
-        Image Size
-      </div>
-      <button
-        onClick={() => resizeImage("25%")}
-        className='w-full text-left px-3 py-2 text-sm hover:bg-gray-100'
-        title='25% width'
+      <Space
+        orientation='vertical'
+        size={token.marginXS}
+        style={{ width: "100%" }}
       >
-        Small (25%)
-      </button>
-      <button
-        onClick={() => resizeImage("50%")}
-        className='w-full text-left px-3 py-2 text-sm hover:bg-gray-100'
-        title='50% width'
-      >
-        Medium (50%)
-      </button>
-      <button
-        onClick={() => resizeImage("75%")}
-        className='w-full text-left px-3 py-2 text-sm hover:bg-gray-100'
-        title='75% width'
-      >
-        Large (75%)
-      </button>
-      <button
-        onClick={() => resizeImage("100%")}
-        className='w-full text-left px-3 py-2 text-sm hover:bg-gray-100'
-        title='100% width'
-      >
-        Full Width (100%)
-      </button>
-      <div className='border-t border-gray-200 mt-1'></div>
-      <div className='text-xs font-semibold text-gray-700 px-3 py-1 border-b border-gray-200 mt-1'>
-        Custom Size
-      </div>
-      <button
-        onClick={() => {
-          const width = window.prompt("Enter width (px or %):", "300");
-          if (width) {
-            resizeImage(width);
-          }
-        }}
-        className='w-full text-left px-3 py-2 text-sm hover:bg-gray-100'
-        title='Custom width'
-      >
-        Set Width...
-      </button>
-      <button
-        onClick={() => {
-          const { from } = editor.state.selection;
-          const node = editor.state.doc.nodeAt(from);
-          if (node && node.type.name === "image") {
-            const attrs: { src: string } = {
-              src: node.attrs.src as string,
-            };
-            // Remove width, height, and style to reset
-            editor.chain().focus().setImage(attrs).run();
-            onClose();
-          }
-        }}
-        className='w-full text-left px-3 py-2 text-sm hover:bg-gray-100'
-        title='Reset to original size'
-      >
-        Reset Size
-      </button>
+        <div
+          style={{
+            fontSize: token.fontSizeSM,
+            fontWeight: 500,
+            color: token.colorTextSecondary,
+          }}
+        >
+          Image size
+        </div>
+
+        {/* Preset sizes */}
+        <Space
+          orientation='vertical'
+          size={token.marginXXS}
+          style={{ width: "100%" }}
+        >
+          <Button
+            size='small'
+            type='text'
+            block
+            icon={<ColumnWidthOutlined />}
+            onClick={() => resizeImage("25%")}
+            style={{ justifyContent: "flex-start" }}
+          >
+            Small (25%)
+          </Button>
+          <Button
+            size='small'
+            type='text'
+            block
+            icon={<ColumnWidthOutlined />}
+            onClick={() => resizeImage("50%")}
+            style={{ justifyContent: "flex-start" }}
+          >
+            Medium (50%)
+          </Button>
+          <Button
+            size='small'
+            type='text'
+            block
+            icon={<ColumnWidthOutlined />}
+            onClick={() => resizeImage("75%")}
+            style={{ justifyContent: "flex-start" }}
+          >
+            Large (75%)
+          </Button>
+          <Button
+            size='small'
+            type='text'
+            block
+            icon={<ColumnWidthOutlined />}
+            onClick={() => resizeImage("100%")}
+            style={{ justifyContent: "flex-start" }}
+          >
+            Full width (100%)
+          </Button>
+
+          {/* Reset size */}
+          <Button
+            size='small'
+            type='text'
+            block
+            icon={<ReloadOutlined />}
+            onClick={() => {
+              const { from } = editor.state.selection;
+              const node = editor.state.doc.nodeAt(from);
+              if (node && node.type.name === "image") {
+                const attrs: { src: string } = {
+                  src: node.attrs.src as string,
+                };
+                editor.chain().focus().setImage(attrs).run();
+                onClose();
+              }
+            }}
+            style={{
+              justifyContent: "flex-start",
+              width: "100%",
+            }}
+          >
+            Reset size
+          </Button>
+        </Space>
+
+        <Divider style={{ margin: 0 }} />
+
+        {/* Alignment */}
+        <div
+          style={{
+            fontWeight: 500,
+            fontSize: token.fontSizeSM,
+            color: token.colorTextSecondary,
+          }}
+        >
+          Alignment
+        </div>
+        <Space size={token.marginXXS}>
+          <Button
+            size='small'
+            icon={<AlignLeftOutlined />}
+            onClick={() => alignImage("left")}
+          />
+          <Button
+            size='small'
+            icon={<AlignCenterOutlined />}
+            onClick={() => alignImage("center")}
+          />
+          <Button
+            size='small'
+            icon={<AlignRightOutlined />}
+            onClick={() => alignImage("right")}
+          />
+        </Space>
+
+        <Divider style={{ margin: 0 }} />
+
+        {/* Custom size */}
+        <div
+          style={{
+            fontSize: token.fontSizeSM,
+            fontWeight: 500,
+            color: token.colorTextSecondary,
+          }}
+        >
+          Custom size
+        </div>
+        <Space
+          orientation='vertical'
+          size={token.marginXXS}
+          style={{ width: "100%" }}
+        >
+          <Button
+            size='small'
+            type='text'
+            block
+            icon={<ColumnWidthOutlined />}
+            onClick={() => {
+              const width = window.prompt("Enter width (px or %):", "300");
+              if (width) {
+                resizeImage(width);
+              }
+            }}
+            style={{ justifyContent: "flex-start" }}
+          >
+            Set width…
+          </Button>
+        </Space>
+
+        <Divider style={{ margin: 0 }} />
+
+        {/* Delete image */}
+        <Button
+          size='small'
+          type='text'
+          block
+          icon={<DeleteOutlined />}
+          danger
+          onClick={() => {
+            const { from } = editor.state.selection;
+            const node = editor.state.doc.nodeAt(from);
+            if (node && node.type.name === "image") {
+              editor.chain().focus().deleteSelection().run();
+              onClose();
+            }
+          }}
+          style={{
+            justifyContent: "flex-start",
+            width: "100%",
+          }}
+        >
+          Delete image
+        </Button>
+      </Space>
     </div>
   );
 }

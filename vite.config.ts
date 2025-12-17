@@ -39,7 +39,7 @@ export default defineConfig({
           antd: ["antd"],
 
           // if you use large icons:
-          // antdIcons: ['@ant-design/icons'],
+          antdIcons: ['@ant-design/icons'],
         },
       },
     },

@@ -37,7 +37,7 @@ function HighlightPicker({ editor }: HighlightPickerProps) {
 
   const content = (
     <Space
-      direction='vertical'
+      orientation='vertical'
       size={token.marginXXS}
       style={{ width: "fit-content" }}
     >

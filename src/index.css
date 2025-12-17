@@ -71,8 +71,8 @@ body {
 
 .ProseMirror hr {
   border: none;
-  border-top: 2px solid #e5e7eb;
-  margin: 2em 0;
+  border-top: 1px solid #b9bbbd;
+  margin: 1em 0;
 }
 
 .ProseMirror code {
@@ -112,6 +112,10 @@ body {
   box-sizing: border-box;
   position: relative;
   padding: 8px;
+}
+
+.ProseMirror p {
+  margin-bottom: 0.3em;
 }
 
 .ProseMirror table p {

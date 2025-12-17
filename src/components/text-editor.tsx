@@ -1,23 +1,10 @@
-import Color from "@tiptap/extension-color";
-import Highlight from "@tiptap/extension-highlight";
-import Image from "@tiptap/extension-image";
-import Link from "@tiptap/extension-link";
-import Subscript from "@tiptap/extension-subscript";
-import Superscript from "@tiptap/extension-superscript";
-import { Table } from "@tiptap/extension-table";
-import { TableCell } from "@tiptap/extension-table-cell";
-import { TableHeader } from "@tiptap/extension-table-header";
-import { TableRow } from "@tiptap/extension-table-row";
-import TextAlign from "@tiptap/extension-text-align";
-import { TextStyle } from "@tiptap/extension-text-style";
-import Underline from "@tiptap/extension-underline";
 import { EditorContent, useEditor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
 import { theme } from "antd";
 import { useEffect, useRef, useState } from "react";
 import ImageContextMenu from "./image/image-context";
 import TableContextMenu from "./table/table-context-menu";
 import EditorToolbar from "./toolbar/editor-toolbar";
+import { textEditorExtensions } from "./text-editor-extensions";
 
 function TextEditor() {
   const { token } = theme.useToken();
@@ -36,51 +23,7 @@ function TextEditor() {
   const editorRef = useRef<HTMLDivElement>(null);
 
   const editor = useEditor({
-    extensions: [
-      StarterKit,
-      TextStyle,
-      Color,
-      Highlight.configure({ multicolor: true }),
-      Underline,
-      Subscript,
-      Superscript,
-      Link.configure({
-        openOnClick: false,
-        linkOnPaste: true,
-      }),
-      TextAlign.configure({
-        types: ["heading", "paragraph"],
-      }),
-      Table.configure({
-        resizable: true,
-      }),
-      TableRow,
-      TableHeader,
-      TableCell,
-      Image.configure({
-        // inline: true,
-        allowBase64: true,
-        resize: {
-          enabled: true,
-          directions: [
-            "bottom-left",
-            "bottom-right",
-            "bottom",
-            "left",
-            "right",
-            "top-left",
-            "top-right",
-            "top",
-          ],
-          minWidth: 100,
-          minHeight: 100,
-          alwaysPreserveAspectRatio: false,
-        },
-        // HTMLAttributes: {
-        //   class: "resizable-image",
-        // },
-      }),
-    ],
+    extensions: textEditorExtensions,
     content: "<p>Start typing...</p>",
     editorProps: {
       attributes: {
@@ -105,7 +48,7 @@ function TextEditor() {
         const view = editor.view;
         const pos = view.posAtDOM(image, 0);
         if (pos !== null) {
-          editor.chain().setTextSelection(pos).run();
+          editor.chain().setNodeSelection(pos).run();
         }
         setImageContextMenu({
           image: image,
@@ -137,7 +80,7 @@ function TextEditor() {
         const view = editor.view;
         const pos = view.posAtDOM(image, 0);
         if (pos !== null) {
-          editor.chain().setTextSelection(pos).run();
+          editor.chain().setNodeSelection(pos).run();
         }
       }
     };
