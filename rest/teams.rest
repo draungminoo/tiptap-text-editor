@@ -1,0 +1,8 @@
+post https://default6885caf17ae748d9a7a354374ac8e5.b4.environment.api.powerplatform.com/powerautomate/automations/direct/workflows/be85799f471a4549b11b64fddccc68d7/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=dGJlleLWSzDGbqXVN34IU4UD24LJzaEpCI5Jrv61keo
+Content-Type: application/json
+
+{
+  "to": ["draungminoo@punhlainghospitals.com", "minooaung28@gmail.com"],
+  "subject": "Teams API Call",
+  "body": "Hello, this is a test message from the API"
+}

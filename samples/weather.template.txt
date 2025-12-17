@@ -1,0 +1,44 @@
+Weather Update for @{outputs('Get_current_weather')?['body/responses/source/location']}
+
+Current Conditions
+Temperature: @{outputs('Get_current_weather')?['body/responses/weather/current/temp']} @{outputs('Get_current_weather')?['body/units/temperature']}
+Feels Like: @{outputs('Get_current_weather')?['body/responses/weather/current/feels']} @{outputs('Get_current_weather')?['body/units/temperature']}
+Condition: @{outputs('Get_current_weather')?['body/responses/weather/current/cap']}
+Dew Point: @{outputs('Get_current_weather')?['body/responses/weather/current/dewPt']} @{outputs('Get_current_weather')?['body/units/temperature']}
+Humidity: @{outputs('Get_current_weather')?['body/responses/weather/current/rh']} % RH
+Pressure: @{outputs('Get_current_weather')?['body/responses/weather/current/baro']} @{outputs('Get_current_weather')?['body/units/pressure']}
+Visibility: @{outputs('Get_current_weather')?['body/responses/weather/current/vis']} @{outputs('Get_current_weather')?['body/units/distance']}
+Wind Speed: @{outputs('Get_current_weather')?['body/responses/weather/current/windSpd']} @{outputs('Get_current_weather')?['body/units/speed']}
+Wind Gust: @{outputs('Get_current_weather')?['body/responses/weather/current/windGust']} @{outputs('Get_current_weather')?['body/units/speed']}
+Wind Direction: @{outputs('Get_current_weather')?['body/responses/weather/current/windDir']}°
+UV Index: @{outputs('Get_current_weather')?['body/responses/weather/current/uv']}
+UV Index Description: @{outputs('Get_current_weather')?['body/responses/weather/current/uvDesc']}
+METAR Weather Code: @{outputs('Get_current_weather')?['body/responses/weather/current/wx']}
+METAR Sky Code: @{outputs('Get_current_weather')?['body/responses/weather/current/sky']}
+Last Updated: @{convertTimeZone(outputs('Get_current_weather')?['body/responses/weather/current/created'], 'UTC', 'Myanmar Standard Time', 'dd-MMM-yyyy hh:mm tt')}
+
+Today Forecast (as of @{convertTimeZone(utcNow(), 'UTC', 'Myanmar Standard Time', 'dd-MMM-yyyy hh:mm tt')})
+Conditions (Day): @{outputs('Get_forecast_for_today')?['body/responses/daily/day/cap']}
+Conditions (Night): @{outputs('Get_forecast_for_today')?['body/responses/daily/night/cap']}
+Day Summary: @{outputs('Get_forecast_for_today')?['body/responses/daily/day/summary']}
+Night Summary: @{outputs('Get_forecast_for_today')?['body/responses/daily/night/summary']}
+High / Low Temp: @{outputs('Get_forecast_for_today')?['body/responses/daily/tempHi']} / @{outputs('Get_forecast_for_today')?['body/responses/daily/tempLo']} @{outputs('Get_forecast_for_today')?['body/units/temperature']}
+Day Rain Chance: @{outputs('Get_forecast_for_today')?['body/responses/daily/day/precip']} %
+Wind Max / Dir: @{outputs('Get_forecast_for_today')?['body/responses/daily/windMax']} @{outputs('Get_forecast_for_today')?['body/units/speed']}, @{outputs('Get_forecast_for_today')?['body/responses/daily/windMaxDir']}°
+Humidity High / Low: @{outputs('Get_forecast_for_today')?['body/responses/daily/rhHi']} % / @{outputs('Get_forecast_for_today')?['body/responses/daily/rhLo']} %
+Sunrise / Sunset: @{convertTimeZone(outputs('Get_forecast_for_today')?['body/responses/almanac/sunrise'], 'UTC', 'Myanmar Standard Time', 'hh:mm tt')} / @{convertTimeZone(outputs('Get_forecast_for_today')?['body/responses/almanac/sunset'], 'UTC', 'Myanmar Standard Time', 'hh:mm tt')}
+Moonrise / Moonset: @{convertTimeZone(outputs('Get_forecast_for_today')?['body/responses/almanac/moonrise'], 'UTC', 'Myanmar Standard Time', 'hh:mm tt')} / @{convertTimeZone(outputs('Get_forecast_for_today')?['body/responses/almanac/moonset'], 'UTC', 'Myanmar Standard Time', 'hh:mm tt')}
+Moon Phase: @{outputs('Get_forecast_for_today')?['body/responses/almanac/moonPhase']}
+
+Tomorrow Forecast (Date: @{addDays(convertTimeZone(utcNow(), 'UTC', 'Myanmar Standard Time'), 1, 'dd-MMM-yyyy')})
+Conditions (Day): @{outputs('Get_the_forecast_for_tomorrow')?['body/responses/daily/day/cap']}
+Conditions (Night): @{outputs('Get_the_forecast_for_tomorrow')?['body/responses/daily/night/cap']}
+Day Summary: @{outputs('Get_the_forecast_for_tomorrow')?['body/responses/daily/day/summary']}
+Night Summary: @{outputs('Get_the_forecast_for_tomorrow')?['body/responses/daily/night/summary']}
+High / Low Temp: @{outputs('Get_the_forecast_for_tomorrow')?['body/responses/daily/tempHi']} / @{outputs('Get_the_forecast_for_tomorrow')?['body/responses/daily/tempLo']} @{outputs('Get_the_forecast_for_tomorrow')?['body/units/temperature']}
+Day Rain Chance: @{outputs('Get_the_forecast_for_tomorrow')?['body/responses/daily/day/precip']} %
+Wind Max / Dir: @{outputs('Get_the_forecast_for_tomorrow')?['body/responses/daily/windMax']} @{outputs('Get_the_forecast_for_tomorrow')?['body/units/speed']}, @{outputs('Get_the_forecast_for_tomorrow')?['body/responses/daily/windMaxDir']}°
+Humidity High / Low: @{outputs('Get_the_forecast_for_tomorrow')?['body/responses/daily/rhHi']} % / @{outputs('Get_the_forecast_for_tomorrow')?['body/responses/daily/rhLo']} %
+Sunrise / Sunset: @{formatDateTime(outputs('Get_the_forecast_for_tomorrow')?['body/responses/almanac/sunrise'], 'dd-MMM-yyyy')} / @{formatDateTime(outputs('Get_the_forecast_for_tomorrow')?['body/responses/almanac/sunset'], 'dd-MMM-yyyy')}
+Moonrise / Moonset: @{formatDateTime(outputs('Get_the_forecast_for_tomorrow')?['body/responses/almanac/moonrise'], 'dd-MMM-yyyy')} / @{formatDateTime(outputs('Get_the_forecast_for_tomorrow')?['body/responses/almanac/moonset'], 'dd-MMM-yyyy')}
+Moon Phase: @{outputs('Get_the_forecast_for_tomorrow')?['body/responses/almanac/moonPhase']}

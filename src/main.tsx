@@ -1,12 +1,17 @@
+import "antd/dist/reset.css";
+import "antd/es/theme/interface";
 import "./index.css";
 
+import { ConfigProvider } from "antd";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import TextEditorComponent from "./components/text-editor-component.tsx";
+import TextEditor from "./components/text-editor.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <TextEditorComponent />
+    <ConfigProvider>
+      <TextEditor />
+    </ConfigProvider>
   </StrictMode>,
 );
 
