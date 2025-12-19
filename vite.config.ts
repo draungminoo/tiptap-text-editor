@@ -4,8 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { readFileSync, writeFileSync } from "fs";
 
 const BASE = "text-editor";
-const BASE_URL = `/ui/${BASE}`;
-const BASE_API_URL = `/api/${BASE}`;
+const BASE_URL = `/app/${BASE}`;
 
 // load package.json and extract homepage
 const packageJson = readFileSync("package.json", "utf8");
@@ -20,7 +19,7 @@ writeFileSync(
 writeFileSync(
   "src/config.ts",
   `export const BASE_URL = "${BASE_URL}";
-export const BASE_API_URL = "${BASE_API_URL}";`,
+`,
 );
 
 // https://vite.dev/config/
